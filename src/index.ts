@@ -101,7 +101,7 @@ async function main(): Promise<void> {
       const files = adm
         .getEntries()
         .filter((entry) => !entry.isDirectory)
-        .map((entry) => entry.entryName);
+        .map((entry) => path.join(artifactDir, entry.entryName));
 
       files.forEach((file) => debug(`  ${file}`));
 
