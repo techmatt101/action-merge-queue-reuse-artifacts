@@ -19191,7 +19191,7 @@ async function main() {
         (0, core_1.info)(`Pull Request Base SHA: ${prBaseSha}`);
         (0, core_1.info)(`Pull Request Head SHA: ${prHeadSha}`);
         if (baseSha !== prBaseSha) {
-            (0, core_1.info)("Base SHA does not match Pull Request base SHA, skipping artifact download.");
+            (0, core_1.info)("Base SHA does not match Pull Request base SHA, skipping.");
             setOutputs(false);
             return;
         }
@@ -19244,7 +19244,7 @@ async function main() {
             const files = adm
                 .getEntries()
                 .filter((entry) => !entry.isDirectory)
-                .map((entry) => entry.entryName);
+                .map((entry) => path_1.default.join(artifactDir, entry.entryName));
             files.forEach((file) => (0, core_1.info)(`  ${file}`));
             artifactsUnpacked.push({
                 name: artifact.name,
