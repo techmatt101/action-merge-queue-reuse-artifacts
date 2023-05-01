@@ -39,6 +39,12 @@ async function main(): Promise<void> {
     const workflowResponse = await client.rest.actions.listWorkflowRuns({ owner, repo, workflow_id: workflowId, per_page: 1, head_sha: prHeadSha });
     const workflowRun = workflowResponse.data.workflow_runs[0];
 
+    if (!workflowRun || workflowRun.status !== "completed") {
+      warning("No completed workflow run found.");
+      setOutputs(false);
+      return;
+    }
+
     info(`Workflow ID: ${workflowRun.id} (${workflowRun.status} ${workflowRun.conclusion})`);
 
     const artifacts = await client.paginate(client.rest.actions.listWorkflowRunArtifacts, {
