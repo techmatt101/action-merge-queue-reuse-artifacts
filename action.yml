@@ -4,6 +4,9 @@ inputs:
   workflow-id:
     description: Workflow file name or ID
     required: true
+  path:
+    description: Directory where to extract artifact(s), defaults to the current directory
+    required: false
 outputs:
   artifacts-reused:
     description: A boolean value to indicate if artifacts have been copied over from a previous workflow

@@ -2,6 +2,7 @@ import { info, debug, warning, setFailed, setOutput, getInput } from "@actions/c
 import { getOctokit } from "@actions/github";
 import { create as createArtifactClient } from "@actions/artifact";
 import { mkdirSync } from "fs";
+import path from "path";
 import AdmZip from "adm-zip";
 
 async function main(): Promise<void> {
@@ -13,6 +14,7 @@ async function main(): Promise<void> {
     }
 
     const workflowId = getInput("workflow-id", { required: true });
+    const outputPath = getInput("path", { required: false }) || "./";
 
     const ref = process.env.GITHUB_REF!;
     const client = getOctokit(process.env.GITHUB_TOKEN!);
@@ -63,7 +65,7 @@ async function main(): Promise<void> {
     const artifactsUnpacked: { name: string; root: string; files: string[] }[] = [];
 
     for (const artifact of artifacts) {
-      const artifactDir = "./" + artifact.name;
+      const artifactDir = path.join(outputPath, artifact.name);
 
       info(`=> Downloading artifact: ${artifact.name} to ${artifactDir}`);
 
