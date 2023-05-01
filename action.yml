@@ -1,0 +1,5 @@
+name: merge-queue-reuse-artifacts
+description: "A Github Action that allows merge queue workflows to reuse artifacts from a previous pull request workflow when branch is not behind."
+runs:
+  using: "node16"
+  main: "dist/index.js"
