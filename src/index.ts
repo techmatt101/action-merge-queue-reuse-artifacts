@@ -12,7 +12,11 @@ async function main(): Promise<void> {
     const client = getOctokit(process.env.GITHUB_TOKEN!);
     const [owner, repo] = process.env.GITHUB_REPOSITORY!.split("/");
 
-    const matches = ref.match(/pr-(\d+)-(.+)$/)!;
+    const matches = ref.match(/pr-(\d+)-(.+)$/);
+    if (!matches || matches.length !== 3) {
+      throw new Error(`Failed to parse ref: ${ref}`);
+    }
+
     const pullNumber = parseInt(matches[1], 10);
     const baseSha = matches[2];
 
