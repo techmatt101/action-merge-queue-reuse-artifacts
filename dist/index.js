@@ -19174,6 +19174,7 @@ async function main() {
         const token = (0, core_1.getInput)("github-token", { required: true });
         const workflowId = (0, core_1.getInput)("workflow-id", { required: true });
         const outputPath = (0, core_1.getInput)("path", { required: false });
+        const retentionDaysInput = (0, core_1.getInput)("retention-days", { required: false });
         const ref = process.env.GITHUB_REF;
         const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
         const client = (0, github_1.getOctokit)(token);
@@ -19215,6 +19216,12 @@ async function main() {
         });
         const artifactClient = (0, artifact_1.create)();
         const artifactsUnpacked = [];
+        const expiredArtifacts = artifacts.filter((x) => x.expired);
+        if (expiredArtifacts.length > 0) {
+            (0, core_1.warning)(`${expiredArtifacts.join(", ")} artifact has/have expired, aborting.`);
+            setOutputs(false);
+            return;
+        }
         for (const artifact of artifacts) {
             const artifactDir = path_1.default.join(outputPath, artifact.name);
             (0, core_1.info)(`=> Downloading artifact: ${artifact.name} to ${artifactDir}`);
@@ -19246,16 +19253,30 @@ async function main() {
                 .filter((entry) => !entry.isDirectory)
                 .map((entry) => path_1.default.join(artifactDir, entry.entryName));
             files.forEach((file) => (0, core_1.debug)(`  ${file}`));
+            adm.extractAllTo(artifactDir, true);
             artifactsUnpacked.push({
                 name: artifact.name,
                 root: artifactDir,
+                createdAt: artifact.created_at,
+                expiresAt: artifact.expires_at,
                 files
             });
-            adm.extractAllTo(artifactDir, true);
         }
         for (const artifact of artifactsUnpacked) {
-            (0, core_1.info)(`=> Uploading artifact: ${artifact.name}`);
-            await artifactClient.uploadArtifact(artifact.name, artifact.files, artifact.root);
+            let retentionDays = 0;
+            if (retentionDaysInput === "match") {
+                if (!artifact.createdAt || !artifact.expiresAt) {
+                    (0, core_1.warning)(`Unable to calcuate retention days for ${artifact.name} artifact as it has no created_at or expires_at. Using default retention.`);
+                }
+                else {
+                    retentionDays = Math.round((new Date(artifact.expiresAt).getTime() - new Date(artifact.createdAt).getTime()) / 1000 / 60 / 60 / 24);
+                }
+            }
+            else if (retentionDaysInput !== "default") {
+                retentionDays = parseInt(retentionDaysInput, 10);
+            }
+            (0, core_1.info)(`=> Uploading artifact: ${artifact.name} (${retentionDays} retention days)`);
+            await artifactClient.uploadArtifact(artifact.name, artifact.files, artifact.root, { retentionDays: retentionDays });
         }
         setOutputs(true);
         (0, core_1.info)(`${artifacts.length} artifacts successfully copied from run ${workflowRun.id}.`);
@@ -19267,7 +19288,7 @@ async function main() {
 }
 function setOutputs(passed) {
     (0, core_1.setOutput)("artifacts-reused", passed);
-    (0, core_1.info)(`artifacts-reused: ${passed ? 'true' : 'false'}`);
+    (0, core_1.info)(`artifacts-reused: ${passed ? "true" : "false"}`);
 }
 main();
 
