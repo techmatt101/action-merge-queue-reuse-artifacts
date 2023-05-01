@@ -1,4 +1,4 @@
-import { info, warning, setFailed, setOutput, getInput } from "@actions/core";
+import { info, debug, warning, setFailed, setOutput, getInput } from "@actions/core";
 import { getOctokit } from "@actions/github";
 import { create as createArtifactClient } from "@actions/artifact";
 import { mkdirSync } from "fs";
@@ -13,9 +13,11 @@ async function main(): Promise<void> {
       return;
     }
 
-    const token = getInput("github-token", { required: true })
+    const token = getInput("github-token", { required: true });
     const workflowId = getInput("workflow-id", { required: true });
     const outputPath = getInput("path", { required: false });
+    const retentionDaysInput = getInput("retention-days", { required: false });
+
     const ref = process.env.GITHUB_REF!;
     const [owner, repo] = process.env.GITHUB_REPOSITORY!.split("/");
     const client = getOctokit(token);
@@ -68,11 +70,17 @@ async function main(): Promise<void> {
     });
 
     const artifactClient = createArtifactClient();
-    const artifactsUnpacked: { name: string; root: string; files: string[] }[] = [];
+    const artifactsUnpacked: { name: string; root: string; files: string[]; createdAt: string | null, expiresAt: string | null }[] = [];
+
+    const expiredArtifacts = artifacts.filter((x) => x.expired);
+    if (expiredArtifacts.length > 0) {
+      warning(`${expiredArtifacts.join(", ")} artifact has/have expired, aborting.`);
+      setOutputs(false);
+      return;
+    }
 
     for (const artifact of artifacts) {
       const artifactDir = path.join(outputPath, artifact.name);
-
       info(`=> Downloading artifact: ${artifact.name} to ${artifactDir}`);
 
       let zip: { data: Buffer };
@@ -94,7 +102,7 @@ async function main(): Promise<void> {
         }
       }
 
-      info(`=> Extracting: ${artifact.name}.zip`);
+      debug(`=> Extracting: ${artifact.name}.zip`);
       const adm = new AdmZip(Buffer.from(zip.data));
       mkdirSync(artifact.name, { recursive: true });
 
@@ -103,20 +111,32 @@ async function main(): Promise<void> {
         .filter((entry) => !entry.isDirectory)
         .map((entry) => path.join(artifactDir, entry.entryName));
 
-      files.forEach((file) => info(`  ${file}`));
+      files.forEach((file) => debug(`  ${file}`));
+      adm.extractAllTo(artifactDir, true);
 
       artifactsUnpacked.push({
         name: artifact.name,
         root: artifactDir,
+        createdAt: artifact.created_at,
+        expiresAt: artifact.expires_at,
         files
       });
-
-      adm.extractAllTo(artifactDir, true);
     }
 
     for (const artifact of artifactsUnpacked) {
-      info(`=> Uploading artifact: ${artifact.name}`);
-      await artifactClient.uploadArtifact(artifact.name, artifact.files, artifact.root);
+      let retentionDays = 0;
+      if (retentionDaysInput === "match") {
+        if (!artifact.createdAt || !artifact.expiresAt) {
+          warning(`Unable to calcuate retention days for ${artifact.name} artifact as it has no created_at or expires_at. Using default retention.`);
+        } else {
+          retentionDays = Math.round((new Date(artifact.expiresAt).getTime() - new Date(artifact.createdAt).getTime()) / 1000 / 60 / 60 / 24);
+        }
+      } else if (retentionDaysInput !== "default") {
+        retentionDays = parseInt(retentionDaysInput, 10);
+      }
+
+      info(`=> Uploading artifact: ${artifact.name} with retention days ${retentionDays}`);
+      await artifactClient.uploadArtifact(artifact.name, artifact.files, artifact.root, { retentionDays: retentionDays });
     }
 
     setOutputs(true);
@@ -129,7 +149,7 @@ async function main(): Promise<void> {
 
 function setOutputs(passed: boolean): void {
   setOutput("artifacts-reused", passed);
-  info(`artifacts-reused: ${passed ? 'true' : 'false'}`);
+  info(`artifacts-reused: ${passed ? "true" : "false"}`);
 }
 
 main();
