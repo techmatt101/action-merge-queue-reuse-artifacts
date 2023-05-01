@@ -60,18 +60,31 @@ async function main(): Promise<void> {
     });
 
     const artifactClient = createArtifactClient();
+    const artifactsUnpacked: { name: string; root: string; files: string[] }[] = [];
 
     for (const artifact of artifacts) {
       const artifactDir = "./" + artifact.name;
 
       info(`=> Downloading artifact: ${artifact.name} to ${artifactDir}`);
 
-      const zip = (await client.rest.actions.downloadArtifact({
-        owner,
-        repo,
-        artifact_id: artifact.id,
-        archive_format: "zip"
-      })) as { data: Buffer };
+      let zip: { data: Buffer };
+      try {
+        zip = (await client.rest.actions.downloadArtifact({
+          owner,
+          repo,
+          artifact_id: artifact.id,
+          archive_format: "zip"
+        })) as any;
+      } catch (error: any) {
+        if (error.message === "Artifact has expired") {
+          warning(`${artifact.name} artifact has expired, aborting.`);
+          setOutputs(false);
+          return;
+        } else {
+          error(`Failed to download artifact: ${artifact.name}`);
+          throw new Error(error.message);
+        }
+      }
 
       debug(`=> Extracting: ${artifact.name}.zip`);
       const adm = new AdmZip(Buffer.from(zip.data));
@@ -84,10 +97,18 @@ async function main(): Promise<void> {
 
       files.forEach((file) => debug(`  ${file}`));
 
-      adm.extractAllTo(artifactDir, true);
-      info(`=> Uploading artifact: ${artifact.name}`);
+      artifactsUnpacked.push({
+        name: artifact.name,
+        root: artifactDir,
+        files
+      });
 
-      await artifactClient.uploadArtifact(artifact.name, files, artifactDir);
+      adm.extractAllTo(artifactDir, true);
+    }
+
+    for (const artifact of artifactsUnpacked) {
+      info(`=> Uploading artifact: ${artifact.name}`);
+      await artifactClient.uploadArtifact(artifact.name, artifact.files, artifact.root);
     }
 
     setOutputs(true);
