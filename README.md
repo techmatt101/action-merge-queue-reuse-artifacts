@@ -21,7 +21,7 @@ jobs:
     outputs:
       skip-build: ${{ steps.reuse-artifacts.outputs.artifacts-reused }}
     steps:
-      - uses: techmatt101/action-merge-queue-reuse-artifacts@1
+      - uses: techmatt101/action-merge-queue-reuse-artifacts@v1
         id: reuse-artifacts
         with:
           workflow: pr.yml
