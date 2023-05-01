@@ -1,12 +1,18 @@
 name: merge-queue-reuse-artifacts
 description: A Github Action that allows merge queue workflows to reuse artifacts from a previous pull request workflow when branch is not behind.
+author: techmatt101
 inputs:
+  github-token:
+    description: GitHub token
+    required: false
+    default: ${{ github.token }}
   workflow-id:
     description: Workflow file name or ID
     required: true
   path:
     description: Directory where to extract artifact(s), defaults to the current directory
     required: false
+    default: "./"
 outputs:
   artifacts-reused:
     description: A boolean value to indicate if artifacts have been copied over from a previous workflow

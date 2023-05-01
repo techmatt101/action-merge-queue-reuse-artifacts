@@ -13,12 +13,12 @@ async function main(): Promise<void> {
       return;
     }
 
+    const token = getInput("github-token", { required: true })
     const workflowId = getInput("workflow-id", { required: true });
-    const outputPath = getInput("path", { required: false }) || "./";
-
+    const outputPath = getInput("path", { required: false });
     const ref = process.env.GITHUB_REF!;
-    const client = getOctokit(process.env.GITHUB_TOKEN!);
     const [owner, repo] = process.env.GITHUB_REPOSITORY!.split("/");
+    const client = getOctokit(token);
 
     const matches = ref.match(/pr-(\d+)-(.+)$/);
     if (!matches || matches.length !== 3) {
