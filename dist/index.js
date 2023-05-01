@@ -19165,7 +19165,6 @@ const fs_1 = __nccwpck_require__(7147);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const adm_zip_1 = __importDefault(__nccwpck_require__(6761));
 async function main() {
-    (0, core_1.info)(`HELLO WORLD!`);
     try {
         if (process.env.GITHUB_EVENT_NAME !== "merge_group") {
             (0, core_1.warning)("Only merge_group event is supported, skipping.");
@@ -19198,8 +19197,13 @@ async function main() {
         }
         const workflowResponse = await client.rest.actions.listWorkflowRuns({ owner, repo, workflow_id: workflowId, per_page: 1, head_sha: prHeadSha });
         const workflowRun = workflowResponse.data.workflow_runs[0];
-        if (!workflowRun || workflowRun.status !== "completed") {
-            (0, core_1.warning)("No completed workflow run found.");
+        if (!workflowRun) {
+            (0, core_1.warning)(`No '${workflowId}' workflow run found for ${prHeadSha}.`);
+            setOutputs(false);
+            return;
+        }
+        if (workflowRun.status !== "completed") {
+            (0, core_1.warning)(`Workflow ${workflowRun.id} has not completed (${workflowRun.status}).`);
             setOutputs(false);
             return;
         }
@@ -19263,6 +19267,7 @@ async function main() {
 }
 function setOutputs(passed) {
     (0, core_1.setOutput)("artifacts-reused", passed);
+    (0, core_1.info)(`artifacts-reused: ${passed ? 'true' : 'false'}`);
 }
 main();
 
