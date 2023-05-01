@@ -10,6 +10,7 @@ When using a merge queue workflow, it is common to have a workflow that builds a
 ## Usage
 
 ```yaml
+# ./.github/workflows/ci.yml
 name: ci
 on:
   merge_group:
@@ -23,10 +24,40 @@ jobs:
       - uses: techmatt101/action-merge-queue-reuse-artifacts@1
         id: reuse-artifacts
         with:
-          workflow: build.yml
+          workflow: pr.yml
 
   build:
     needs: plan
     if: needs.plan.outputs.skip-build == false
     uses: ./.github/workflows/build.yml
+```
+
+```yaml
+# ./.github/workflows/pr.yml
+name: pr
+on:
+  pull_request:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+```
+
+```yaml
+# ./.github/workflows/build.yml
+name: build
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm install
+      - run: npm run build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: release
+          path: 'dist'
 ```
