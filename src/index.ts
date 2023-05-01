@@ -6,6 +6,12 @@ import AdmZip from "adm-zip";
 
 async function main(): Promise<void> {
   try {
+    if (process.env.GITHUB_EVENT_NAME !== "merge_group") {
+      warning("Only merge_group event is supported, skipping.");
+      setOutputs(false);
+      return;
+    }
+
     const workflowId = getInput("workflow-id", { required: true });
 
     const ref = process.env.GITHUB_REF!;
