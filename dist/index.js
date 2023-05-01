@@ -19165,17 +19165,19 @@ const fs_1 = __nccwpck_require__(7147);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const adm_zip_1 = __importDefault(__nccwpck_require__(6761));
 async function main() {
+    (0, core_1.info)(`HELLO WORLD!`);
     try {
         if (process.env.GITHUB_EVENT_NAME !== "merge_group") {
             (0, core_1.warning)("Only merge_group event is supported, skipping.");
             setOutputs(false);
             return;
         }
+        const token = (0, core_1.getInput)("github-token", { required: true });
         const workflowId = (0, core_1.getInput)("workflow-id", { required: true });
-        const outputPath = (0, core_1.getInput)("path", { required: false }) || "./";
+        const outputPath = (0, core_1.getInput)("path", { required: false });
         const ref = process.env.GITHUB_REF;
-        const client = (0, github_1.getOctokit)(process.env.GITHUB_TOKEN);
         const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+        const client = (0, github_1.getOctokit)(token);
         const matches = ref.match(/pr-(\d+)-(.+)$/);
         if (!matches || matches.length !== 3) {
             throw new Error(`Failed to parse ref: ${ref}`);
@@ -19232,14 +19234,14 @@ async function main() {
                     throw new Error(error.message);
                 }
             }
-            (0, core_1.debug)(`=> Extracting: ${artifact.name}.zip`);
+            (0, core_1.info)(`=> Extracting: ${artifact.name}.zip`);
             const adm = new adm_zip_1.default(Buffer.from(zip.data));
             (0, fs_1.mkdirSync)(artifact.name, { recursive: true });
             const files = adm
                 .getEntries()
                 .filter((entry) => !entry.isDirectory)
                 .map((entry) => entry.entryName);
-            files.forEach((file) => (0, core_1.debug)(`  ${file}`));
+            files.forEach((file) => (0, core_1.info)(`  ${file}`));
             artifactsUnpacked.push({
                 name: artifact.name,
                 root: artifactDir,
