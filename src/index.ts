@@ -39,7 +39,7 @@ async function main(): Promise<void> {
     info(`Pull Request Head SHA: ${prHeadSha}`);
 
     if (baseSha !== prBaseSha) {
-      info("Base SHA does not match Pull Request base SHA, skipping artifact download.");
+      info("Base SHA does not match Pull Request base SHA, skipping.");
       setOutputs(false);
       return;
     }
@@ -47,8 +47,14 @@ async function main(): Promise<void> {
     const workflowResponse = await client.rest.actions.listWorkflowRuns({ owner, repo, workflow_id: workflowId, per_page: 1, head_sha: prHeadSha });
     const workflowRun = workflowResponse.data.workflow_runs[0];
 
-    if (!workflowRun || workflowRun.status !== "completed") {
-      warning("No completed workflow run found.");
+    if (!workflowRun) {
+      warning(`No '${workflowId}' workflow run found for ${prHeadSha}.`);
+      setOutputs(false);
+      return;
+    }
+
+    if (workflowRun.status !== "completed") {
+      warning(`Workflow ${workflowRun.id} has not completed (${workflowRun.status}).`);
       setOutputs(false);
       return;
     }
@@ -123,6 +129,7 @@ async function main(): Promise<void> {
 
 function setOutputs(passed: boolean): void {
   setOutput("artifacts-reused", passed);
+  info(`artifacts-reused: ${passed ? 'true' : 'false'}`);
 }
 
 main();
