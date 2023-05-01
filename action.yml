@@ -13,6 +13,10 @@ inputs:
     description: Directory where to extract artifact(s), defaults to the current directory
     required: false
     default: "./"
+  retention-days:
+    description: Duration after which artifact will expire in days. 0 or 'default' will use default retention. 'match' will use the same as the source artifact.
+    required: false
+    default: "match"
 outputs:
   artifacts-reused:
     description: A boolean value to indicate if artifacts have been copied over from a previous workflow
