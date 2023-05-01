@@ -1,4 +1,4 @@
-import { info, debug, warning, setFailed, setOutput, getInput } from "@actions/core";
+import { info, warning, setFailed, setOutput, getInput } from "@actions/core";
 import { getOctokit } from "@actions/github";
 import { create as createArtifactClient } from "@actions/artifact";
 import { mkdirSync } from "fs";
@@ -13,12 +13,12 @@ async function main(): Promise<void> {
       return;
     }
 
+    const token = getInput("github-token", { required: true })
     const workflowId = getInput("workflow-id", { required: true });
-    const outputPath = getInput("path", { required: false }) || "./";
-
+    const outputPath = getInput("path", { required: false });
     const ref = process.env.GITHUB_REF!;
-    const client = getOctokit(process.env.GITHUB_TOKEN!);
     const [owner, repo] = process.env.GITHUB_REPOSITORY!.split("/");
+    const client = getOctokit(token);
 
     const matches = ref.match(/pr-(\d+)-(.+)$/);
     if (!matches || matches.length !== 3) {
@@ -88,7 +88,7 @@ async function main(): Promise<void> {
         }
       }
 
-      debug(`=> Extracting: ${artifact.name}.zip`);
+      info(`=> Extracting: ${artifact.name}.zip`);
       const adm = new AdmZip(Buffer.from(zip.data));
       mkdirSync(artifact.name, { recursive: true });
 
@@ -97,7 +97,7 @@ async function main(): Promise<void> {
         .filter((entry) => !entry.isDirectory)
         .map((entry) => entry.entryName);
 
-      files.forEach((file) => debug(`  ${file}`));
+      files.forEach((file) => info(`  ${file}`));
 
       artifactsUnpacked.push({
         name: artifact.name,
