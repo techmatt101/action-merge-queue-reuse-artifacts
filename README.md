@@ -56,7 +56,7 @@ jobs:
 
   build:
     needs: plan
-    if: needs.plan.outputs.skip-build == false
+    if: needs.plan.outputs.skip-build == 'false'
     uses: ./.github/workflows/build.yml
 ```
 
