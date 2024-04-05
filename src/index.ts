@@ -1,6 +1,6 @@
 import { info, debug, warning, setFailed, setOutput, getInput } from "@actions/core";
 import { getOctokit } from "@actions/github";
-import { create as createArtifactClient } from "@actions/artifact";
+import { DefaultArtifactClient } from "@actions/artifact";
 import { mkdirSync } from "fs";
 import path from "path";
 import AdmZip from "adm-zip";
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
       run_id: workflowRun.id
     });
 
-    const artifactClient = createArtifactClient();
+    const artifactClient = new DefaultArtifactClient();
     const artifactsUnpacked: { name: string; root: string; files: string[]; createdAt: string | null, expiresAt: string | null }[] = [];
 
     const expiredArtifacts = artifacts.filter((x) => x.expired);

@@ -23,16 +23,16 @@
   "author": "techmatt101",
   "license": "MIT",
   "dependencies": {
-    "@actions/artifact": "^1.1.1",
+    "@actions/artifact": "^2.1.4",
     "@actions/core": "^1.10.0",
-    "@actions/github": "^5.0.1",
+    "@actions/github": "^6.0.0",
     "adm-zip": "^0.5.10"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.0",
-    "@types/node": "^16.11.11",
-    "@vercel/ncc": "^0.36.1",
-    "prettier": "^2.2.1",
-    "typescript": "^4.5.2"
+    "@types/node": "^20.12.4",
+    "@vercel/ncc": "^0.38.1",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.4"
   }
 }
