@@ -9,6 +9,34 @@ When using a merge queue workflow, it is common to have a workflow that builds a
 
 ## Usage
 
+### Inputs
+
+```yaml
+- uses: techmatt101/action-merge-queue-reuse-artifacts@v2
+  with:
+    # Workflow file name or ID
+    # Required.
+    workflow-id: pr.yml
+
+    # Directory where to extract artifact(s), defaults to the current directory
+    # Optional. Default is './'
+    path:
+
+    # Duration after which artifact will expire in days. 0 means using default retention.
+    # Minimum 1 day.
+    # Maximum 90 days unless changed from the repository settings page.
+    # Use 'match' to match the retention-days used by the referenced workflow-id
+    # Optional. Defaults to 'match'
+    retention-days:
+
+    # The level of compression for Zlib to be applied to the artifact archive.
+    # The value can range from 0 to 9.
+    # For large files that are not easily compressed, a value of 0 is recommended for significantly faster uploads.
+    # Optional. Default is '6'
+    compression-level:
+```
+
+
 ```yaml
 # ./.github/workflows/ci.yml
 name: ci
@@ -21,7 +49,7 @@ jobs:
     outputs:
       skip-build: ${{ steps.reuse-artifacts.outputs.artifacts-reused }}
     steps:
-      - uses: techmatt101/action-merge-queue-reuse-artifacts@v1
+      - uses: techmatt101/action-merge-queue-reuse-artifacts@v2
         id: reuse-artifacts
         with:
           workflow-id: pr.yml
