@@ -5,7 +5,7 @@
   "description": "A Github Action that allows merge queue workflows to reuse artifacts from a previous pull request workflow when branch is not behind.",
   "main": "dist/index.ts",
   "engines": {
-    "node": "^16.13.0"
+    "node": "^20.0.0"
   },
   "scripts": {
     "build": "ncc build src/index.ts --out dist",

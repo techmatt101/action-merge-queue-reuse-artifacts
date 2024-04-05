@@ -21,5 +21,5 @@ outputs:
   artifacts-reused:
     description: A boolean value to indicate if artifacts have been copied over from a previous workflow
 runs:
-  using: node16
+  using: node20
   main: dist/index.js
