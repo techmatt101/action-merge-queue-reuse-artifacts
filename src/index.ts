@@ -17,6 +17,7 @@ async function main(): Promise<void> {
     const workflowId = getInput("workflow-id", { required: true });
     const outputPath = getInput("path", { required: false });
     const retentionDaysInput = getInput("retention-days", { required: false });
+    const compressionLevelInput = parseInt(getInput("compression-level", { required: false }));
 
     const ref = process.env.GITHUB_REF!;
     const [owner, repo] = process.env.GITHUB_REPOSITORY!.split("/");
@@ -136,7 +137,7 @@ async function main(): Promise<void> {
       }
 
       info(`=> Uploading artifact: ${artifact.name} (${retentionDays} retention days)`);
-      await artifactClient.uploadArtifact(artifact.name, artifact.files, artifact.root, { retentionDays: retentionDays });
+      await artifactClient.uploadArtifact(artifact.name, artifact.files, artifact.root, { retentionDays: retentionDays, compressionLevel: compressionLevelInput });
     }
 
     setOutputs(true);

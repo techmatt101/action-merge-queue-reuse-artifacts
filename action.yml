@@ -17,6 +17,10 @@ inputs:
     description: Duration after which artifact will expire in days. 0 or 'default' will use default retention. 'match' will use the same as the source artifact.
     required: false
     default: "match"
+  compression-level:
+    description: The level of compression for Zlib to be applied to the artifact archive.
+    required: false
+    default: '6'
 outputs:
   artifacts-reused:
     description: A boolean value to indicate if artifacts have been copied over from a previous workflow
