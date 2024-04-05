@@ -1,4 +1,4 @@
-import { info, debug, warning, setFailed, setOutput, getInput } from "@actions/core";
+import { info, debug, warning, error, setFailed, setOutput, getInput } from "@actions/core";
 import { getOctokit } from "@actions/github";
 import { DefaultArtifactClient } from "@actions/artifact";
 import { mkdirSync } from "fs";
@@ -92,14 +92,14 @@ async function main(): Promise<void> {
           artifact_id: artifact.id,
           archive_format: "zip"
         })) as any;
-      } catch (error: any) {
-        if (error.message === "Artifact has expired") {
+      } catch (e: any) {
+        if (e.message === "Artifact has expired") {
           warning(`${artifact.name} artifact has expired, aborting.`);
           setOutputs(false);
           return;
         } else {
           error(`Failed to download artifact: ${artifact.name}`);
-          throw new Error(error.message);
+          throw new Error(e.message);
         }
       }
 
