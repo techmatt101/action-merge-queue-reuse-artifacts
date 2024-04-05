@@ -24,7 +24,7 @@ jobs:
       - uses: techmatt101/action-merge-queue-reuse-artifacts@v1
         id: reuse-artifacts
         with:
-          workflow: pr.yml
+          workflow-id: pr.yml
 
   build:
     needs: plan
