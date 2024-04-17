@@ -1,4 +1,4 @@
-import { info, debug, warning, error, setFailed, setOutput, getInput } from "@actions/core";
+import { info, debug, warning, error, setFailed, setOutput, getInput, startGroup, endGroup } from "@actions/core";
 import { getOctokit } from "@actions/github";
 import { DefaultArtifactClient } from "@actions/artifact";
 import { mkdirSync } from "fs";
@@ -62,7 +62,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    info(`Workflow ID: ${workflowRun.id} (${workflowRun.status} ${workflowRun.conclusion})`);
+    info(`Workflow ID: ${workflowRun.id} Run Number: ${workflowRun.run_number} Status: ${workflowRun.status} Conclusion: ${workflowRun.conclusion}`);
 
     const artifacts = await client.paginate(client.rest.actions.listWorkflowRunArtifacts, {
       owner: owner,
@@ -82,7 +82,12 @@ async function main(): Promise<void> {
 
     for (const artifact of artifacts) {
       const artifactDir = path.join(outputPath, artifact.name);
-      info(`=> Downloading artifact: ${artifact.name} to ${artifactDir}`);
+      info(`+ Artifact ${artifact.name} found. ID: ${artifact.id} Expires At: ${artifact.expires_at} Size: ${artifact.size_in_bytes}`);
+    }
+
+    for (const artifact of artifacts) {
+      const artifactDir = path.join(outputPath, artifact.name);
+      startGroup(`=> Downloading artifact: ${artifact.id} (${artifact.name}) to ./${artifactDir}`);
 
       let zip: { data: Buffer };
       try {
@@ -103,7 +108,7 @@ async function main(): Promise<void> {
         }
       }
 
-      debug(`=> Extracting: ${artifact.name}.zip`);
+      debug(`Extracting: ${artifact.name}.zip`);
       const adm = new AdmZip(Buffer.from(zip.data));
       mkdirSync(artifact.name, { recursive: true });
 
@@ -122,6 +127,9 @@ async function main(): Promise<void> {
         expiresAt: artifact.expires_at,
         files
       });
+
+      info(`Artifact ${artifact.name} successfully finalized.`);
+      endGroup()
     }
 
     for (const artifact of artifactsUnpacked) {
@@ -136,12 +144,15 @@ async function main(): Promise<void> {
         retentionDays = parseInt(retentionDaysInput, 10);
       }
 
-      info(`=> Uploading artifact: ${artifact.name} (${retentionDays} retention days)`);
+      startGroup(`=> Uploading artifact: ${artifact.name}`);
+      info(`Retention days: ${retentionDays}`);
+      info(`Compression Level: ${compressionLevelInput}`);
       await artifactClient.uploadArtifact(artifact.name, artifact.files, artifact.root, { retentionDays: retentionDays, compressionLevel: compressionLevelInput });
+      endGroup();
     }
 
     setOutputs(true);
-    info(`${artifacts.length} artifacts successfully copied from run ${workflowRun.id}.`);
+    info(`${artifacts.length} artifacts successfully copied from workflow ${workflowRun.id}.`);
   } catch (error: any) {
     setOutputs(false);
     setFailed(error.message);
