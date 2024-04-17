@@ -4,6 +4,7 @@ import { DefaultArtifactClient } from "@actions/artifact";
 import { mkdirSync } from "fs";
 import path from "path";
 import AdmZip from "adm-zip";
+import { createHash } from "crypto";
 
 async function main(): Promise<void> {
   try {
@@ -97,6 +98,9 @@ async function main(): Promise<void> {
           artifact_id: artifact.id,
           archive_format: "zip"
         })) as any;
+
+        const sha256 = createHash('sha256').update(zip.data).digest('hex');
+        info(`SHA256 Hash of downloaded artifact: ${sha256}`);
       } catch (e: any) {
         if (e.message === "Artifact has expired") {
           warning(`${artifact.name} artifact has expired, aborting.`);
@@ -108,7 +112,7 @@ async function main(): Promise<void> {
         }
       }
 
-      debug(`Extracting: ${artifact.name}.zip`);
+      info(`Extracting: ./${artifact.name}.zip to ./${artifactDir}`);
       const adm = new AdmZip(Buffer.from(zip.data));
       mkdirSync(artifact.name, { recursive: true });
 
