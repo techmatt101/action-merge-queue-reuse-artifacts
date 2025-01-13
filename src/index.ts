@@ -65,12 +65,28 @@ async function main(): Promise<void> {
 
     info(`Workflow ID: ${workflowRun.id} Run Number: ${workflowRun.run_number} Status: ${workflowRun.status} Conclusion: ${workflowRun.conclusion}`);
 
-    const artifacts = await client.paginate(client.rest.actions.listWorkflowRunArtifacts, {
+    const workflowArtifacts = await client.paginate(client.rest.actions.listWorkflowRunArtifacts, {
       owner: owner,
       repo: repo,
       run_id: workflowRun.id
     });
 
+    const artifactsMap = new Map<string, any>();
+    for (const artifact of workflowArtifacts) {
+      if (!artifactsMap.has(artifact.name)) {
+        artifactsMap.set(artifact.name, artifact);
+      } else {
+        const existing = artifactsMap.get(artifact.name)!;
+        if (new Date(artifact.created_at!).getTime() > new Date(existing.created_at!).getTime()) {
+          info(`Filtering out older artifact ${existing.name} (ID: ${existing.id}) created_at: ${existing.created_at} because a newer version (ID: ${artifact.id}, created_at: ${artifact.created_at}) is available.`);
+          artifactsMap.set(artifact.name, artifact);
+        } else {
+          info(`Filtering out older artifact ${artifact.name} (ID: ${artifact.id}) created_at: ${artifact.created_at} because a newer version (ID: ${existing.id}, created_at: ${existing.created_at}) is available.`);
+        }
+      }
+    }
+
+    const artifacts = Array.from(artifactsMap.values());
     const artifactClient = new DefaultArtifactClient();
     const artifactsUnpacked: { name: string; root: string; files: string[]; createdAt: string | null, expiresAt: string | null }[] = [];
 
@@ -82,7 +98,6 @@ async function main(): Promise<void> {
     }
 
     for (const artifact of artifacts) {
-      const artifactDir = path.join(outputPath, artifact.name);
       info(`+ Artifact ${artifact.name} found. ID: ${artifact.id} Expires At: ${artifact.expires_at} Size: ${artifact.size_in_bytes}`);
     }
 
@@ -99,7 +114,7 @@ async function main(): Promise<void> {
           archive_format: "zip"
         })) as any;
 
-        const sha256 = createHash('sha256').update(zip.data).digest('hex');
+        const sha256 = createHash("sha256").update(zip.data).digest("hex");
         info(`SHA256 Hash of downloaded artifact: ${sha256}`);
       } catch (e: any) {
         if (e.message === "Artifact has expired") {
@@ -133,14 +148,14 @@ async function main(): Promise<void> {
       });
 
       info(`Artifact ${artifact.name} successfully finalized.`);
-      endGroup()
+      endGroup();
     }
 
     for (const artifact of artifactsUnpacked) {
       let retentionDays = 0;
       if (retentionDaysInput === "match") {
         if (!artifact.createdAt || !artifact.expiresAt) {
-          warning(`Unable to calcuate retention days for ${artifact.name} artifact as it has no created_at or expires_at. Using default retention.`);
+          warning(`Unable to calculate retention days for ${artifact.name} artifact. No created_at or expires_at. Using default retention.`);
         } else {
           retentionDays = Math.round((new Date(artifact.expiresAt).getTime() - new Date(artifact.createdAt).getTime()) / 1000 / 60 / 60 / 24);
         }
