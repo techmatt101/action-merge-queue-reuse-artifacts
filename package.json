@@ -1,6 +1,6 @@
 {
   "name": "action-merge-queue-reuse-artifacts",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "private": true,
   "description": "A Github Action that allows merge queue workflows to reuse artifacts from a previous pull request workflow when branch is not behind.",
   "main": "dist/index.ts",
