@@ -20,7 +20,7 @@ inputs:
   compression-level:
     description: The level of compression for Zlib to be applied to the artifact archive.
     required: false
-    default: '6'
+    default: "6"
 outputs:
   artifacts-reused:
     description: A boolean value to indicate if artifacts have been copied over from a previous workflow

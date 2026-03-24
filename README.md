@@ -36,7 +36,6 @@ When using a merge queue workflow, it is common to have a workflow that builds a
     compression-level:
 ```
 
-
 ```yaml
 # ./.github/workflows/ci.yml
 name: ci
@@ -87,5 +86,5 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: release
-          path: 'dist'
+          path: "dist"
 ```
